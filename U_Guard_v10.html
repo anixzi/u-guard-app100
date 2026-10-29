@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>U-Guard v10.0 | Case Master</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        :root {
+            --bg-main: #0a0f0c;
+            --bg-card: #141c17;
+            --bg-card-light: #1f2b23;
+            --text-main: #e0e6e2;
+            --text-muted: #8b9690;
+            --accent-green: #6cf57c;
+            --accent-blue: #4da6ff;
+            --alert-red: #ff4d4d;
+            --warning-yellow: #f5d76e;
+            --bg-menu: #111814;
+        }
+
+        body.light-theme {
+            --bg-main: #f4f7f5;
+            --bg-card: #ffffff;
+            --bg-card-light: #e0e6e2;
+            --text-main: #1f2b23;
+            --text-muted: #5a6b60;
+            --bg-menu: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; transition: background 0.3s, color 0.3s; }
+        body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; color: var(--text-main); overflow: hidden;}
+
+        .phone { width: 100%; max-width: 420px; height: 100vh; max-height: 880px; background-color: var(--bg-main); position: relative; overflow: hidden; display: flex; flex-direction: column; border: 8px solid #222; border-radius: 35px; }
+
+        /* Статус-бар */
+        .status-bar { padding: 10px 20px 5px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: 600; color: var(--text-main); z-index: 20; }
+        .sys-badges { display: flex; gap: 8px; }
+        .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(108, 245, 124, 0.1); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge.offline { background: rgba(255, 77, 77, 0.1); color: var(--alert-red); border-color: var(--alert-red); }
+
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; padding: 40px 20px 80px; overflow-y: auto; background-color: var(--bg-main); }
+        .screen.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Хедер и Меню */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+        .menu-btn { font-size: 1.5rem; cursor: pointer; }
+        
+        .side-menu { position: absolute; top: 0; left: -80%; width: 75%; height: 100%; background: var(--bg-menu); z-index: 100; padding: 40px 20px; box-shadow: 5px 0 20px rgba(0,0,0,0.5); transition: left 0.3s ease; display: flex; flex-direction: column; border-right: 1px solid var(--bg-card-light); overflow-y: auto;}
+        .side-menu.open { left: 0; }
+        .menu-item { padding: 12px 0; border-bottom: 1px solid var(--bg-card-light); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; color: var(--text-main); font-size: 0.9rem;}
+        .menu-item:hover { color: var(--accent-green); }
+        .overlay-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; display: none; }
+        .overlay-bg.open { display: block; }
+
+        /* Карточки */
+        .card { background-color: var(--bg-card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--bg-card-light); box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+        .card-title { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
+        .card-value { font-size: 1.6rem; font-weight: 700; color: var(--text-main); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        /* Кнопки */
+        .btn { background-color: var(--accent-green); color: #000; border: none; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 8px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .btn:active { transform: scale(0.97); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--accent-green); color: var(--accent-green); }
+        .btn-red { background-color: var(--alert-red); color: #fff; }
+        .btn-yellow { background-color: var(--warning-yellow); color: #000; }
+        .btn-blue { background-color: var(--accent-blue); color: #fff; }
+
+        /* Навигация */
+        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; background-color: var(--bg-menu); display: flex; justify-content: space-around; padding: 10px 5px; border-top: 1px solid var(--bg-card-light); z-index: 20; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.65rem; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .nav-icon { font-size: 1.3rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-green); font-weight: bold;}
+
+        /* Авторизация */
+        #screen-login { justify-content: flex-start; text-align: center; padding-top: 10px;}
+        .logo-big { font-size: 3rem; font-weight: 900; color: var(--accent-green); margin-bottom: 5px; text-shadow: 0 0 30px rgba(108, 245, 124, 0.3);}
+        .login-input { width: 100%; padding: 12px; background: var(--bg-card); border: 1px solid var(--bg-card-light); border-radius: 8px; color: var(--text-main); font-size: 1rem; margin-bottom: 10px; text-align: center;}
+        .role-btn { justify-content: flex-start; padding: 10px; margin-bottom: 6px; font-size: 0.85rem;}
+        .role-btn span { font-size: 1.2rem; margin-right: 10px;}
+
+        /* Модальные окна */
+        .modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-main); z-index: 150; padding: 40px 20px; display: none; flex-direction: column; overflow-y: auto;}
+        .modal.active { display: flex; animation: fadeIn 0.3s ease; }
+        .faq-q { font-weight: 700; color: var(--warning-yellow); margin-top: 15px; font-size: 0.85rem;}
+        .faq-a { font-size: 0.8rem; color: var(--text-main); margin-top: 5px; line-height: 1.4; background: var(--bg-card); padding: 10px; border-radius: 8px;}
+
+        /* Чек-лист СИЗ */
+        .check-item { display: flex; gap: 10px; align-items: center; font-size: 0.85rem; padding: 12px; border-radius: 8px; background: var(--bg-card); margin-bottom: 8px; cursor: pointer; border-left: 4px solid var(--text-muted);}
+        .check-item.done { background: rgba(108, 245, 124, 0.1); border-left-color: var(--accent-green); text-decoration: line-through; opacity: 0.7;}
+        .check-box { width: 20px; height: 20px; border: 2px solid var(--text-muted); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold;}
+        .check-item.done .check-box { background: var(--accent-green); border-color: var(--accent-green); color: #000;}
+
+        /* Настройки */
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--bg-card-light); font-size: 0.9rem;}
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-green); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* Таймлайн (План реализации) */
+        .timeline { border-left: 2px solid var(--accent-green); margin-left: 10px; padding-left: 15px; margin-top: 10px;}
+        .timeline-item { position: relative; margin-bottom: 20px; }
+        .timeline-item::before { content: ''; position: absolute; left: -21px; top: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-green); }
+        .timeline-title { font-weight: bold; font-size: 0.9rem; color: #fff; margin-bottom: 3px;}
+        .timeline-desc { font-size: 0.75rem; color: var(--text-muted);}
+
+        /* Таблица рисков */
+        .risk-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--bg-card-light); font-size: 0.75rem;}
+        .risk-type { font-weight: bold; width: 30%; }
+        .risk-mitigation { width: 65%; color: var(--text-muted); }
+
+        /* Графики */
+        .chart-container { height: 150px; display: flex; align-items: flex-end; gap: 10px; margin-top: 15px; padding-bottom: 20px; border-bottom: 2px solid var(--bg-card-light); position: relative;}
+        .bar { flex: 1; background-color: var(--accent-green); border-radius: 4px 4px 0 0; transition: height 0.5s; position: relative;}
+        .bar-label { position: absolute; bottom: -20px; left: 0; width: 100%; text-align: center; font-size: 0.65rem; color: var(--text-muted);}
+        .time-filter { display: flex; gap: 5px; margin-bottom: 10px;}
+        .tf-btn { background: var(--bg-card-light); color: var(--text-main); border: none; padding: 5px 10px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;}
+        .tf-btn.active { background: var(--accent-green); color: #000; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<div class="overlay-bg" id="overlay-bg" onclick="toggleMenu(false)"></div>
+
+<div class="phone">
+    <!-- Боковое меню -->
+    <div class="side-menu" id="side-menu">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 2rem; color: var(--accent-green); font-weight: bold;">U-Guard</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);" id="menu-role-name">Роль</div>
+        </div>
+        <div class="menu-item" onclick="nav('dashboard'); toggleMenu(false)">🏠 Главная</div>
+        <div class="menu-item" onclick="nav('roadmap'); toggleMenu(false)">🗺️ План реализации</div>
+        <div class="menu-item" onclick="nav('risks'); toggleMenu(false)">⚠️ Карта рисков</div>
+        <div class="menu-item" onclick="nav('placement'); toggleMenu(false)">📍 Концепция размещения</div>
+        <div class="menu-item" onclick="openFAQ(); toggleMenu(false)">❓ FAQ для жюри</div>
+        <div class="menu-item" onclick="nav('settings'); toggleMenu(false)">⚙️ Настройки</div>
+        <div class="menu-item" onclick="logout()">🚪 Сменить роль (Выход)</div>
+    </div>
+
+    <!-- Статус-бар -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div class="sys-badges">
+            <span class="badge" id="badge-status">Система: OK</span>
+            <span class="badge" id="badge-net">Онлайн</span>
+        </div>
+        <span>🔋 100%</span>
+    </div>
+
+    <!-- ЭКРАН 1: АВТОРИЗАЦИЯ -->
+    <div id="screen-login" class="screen active">
+        <div class="logo-big">U-Guard</div>
+        <div style="color: var(--text-muted); margin-bottom: 15px; font-size: 0.85rem;">Выберите роль для входа в систему</div>
+        
+        <button class="btn btn-outline role-btn" onclick="login('operator')"><span>👷</span><b>Оператор смены</b></button>
+        <button class="btn btn-outline role-btn" onclick="login('technologist')"><span>🧪</span><b>Технолог</b></button>
+        <button class="btn btn-outline role-btn" onclick="login('biologist')"><span>🌱</span><b>Биолог / Эколог</b></button>
+        <button class="btn btn-outline role-btn" onclick="login('worker')"><span>🦺</span><b>Рабочий (СИЗ)</b></button>
+        <button class="btn btn-outline role-btn" onclick="showPasswordPrompt('director')"><span>💼</span><b>Директор (Пароль)</b></button>
+        <button class="btn btn-outline role-btn" onclick="login('public')"><span>🌍</span><b>Жители (Публичный)</b></button>
+
+        <div id="password-area" style="display: none; margin-top: 15px; width: 100%;">
+            <input type="password" id="pass-input" class="login-input" placeholder="Пароль (1234)">
+            <button class="btn btn-yellow" onclick="checkPassword()">Войти</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 2: ГЛАВНАЯ (ДАШБОРД) -->
+    <div id="screen-dashboard" class="screen">
+        <div class="header">
+            <span class="menu-btn" onclick="toggleMenu(true)">☰</span>
+            <span id="role-display">Роль</span>
+            <span>🔔</span>
+        </div>
+
+        <!-- Оператор -->
+        <div id="dash-operator" style="display: none;">
+            <div class="grid-2">
+                <div class="card"><div class="card-title">Эффективность</div><div id="eff-value" class="card-value" style="color: var(--accent-green);">95%</div></div>
+                <div class="card"><div class="card-title">Потери (кг)</div><div id="loss-value" class="card-value" style="color: var(--alert-red);">0,45</div></div>
+            </div>
+            <button class="btn btn-yellow" id="upgrade-btn" onclick="upgradeTo97()">Внедрить смолу Purolite</button>
+            <button class="btn btn-outline" id="revert-btn" onclick="revertUpgrade()" style="display: none;">❌ Отменить (Вернуть 95%)</button>
+            
+            <div class="card">
+                <div class="card-title">Материальный баланс (Кейс)</div>
+                <table style="width:100%; font-size:0.8rem; margin-top:5px;">
+                    <tr><td>Вход:</td><td style="text-align:right;">9,00 кг</td></tr>
+                    <tr><td>Сорбировано:</td><td style="text-align:right;">8,55 кг</td></tr>
+                    <tr><td>Потери:</td><td style="text-align:right;">0,45 кг</td></tr>
+                    <tr><td>Затраты:</td><td style="text-align:right;">45 000 ₽</td></tr>
+                    <tr><td>Прибыль:</td><td style="text-align:right;">40 500 ₽</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Технолог -->
+        <div id="dash-technologist" style="display: none;">
+            <div class="card">
+                <div class="card-title">Прогноз точки проскока</div>
+                <div class="card-value" style="color: var(--warning-yellow);">Через 4 часа</div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:5px;">Модель Томаса показывает насыщение колонны №2.</p>
+                <button class="btn btn-outline" onclick="openModal('modal-models')" style="margin-top:10px;">🧮 Математические модели</button>
+            </div>
+            <div class="card">
+                <div class="card-title">Валидация лаборатории</div>
+                <input type="number" id="lab-input" class="login-input" placeholder="Концентрация (мг/л)" style="text-align:left;">
+                <button class="btn btn-blue" onclick="submitLabData()">Подтвердить данные</button>
+            </div>
+        </div>
+
+        <!-- Биолог -->
+        <div id="dash-biologist" style="display: none;">
+            <div class="grid-2">
+                <div class="card"><div class="card-title">Вода (река)</div><div class="card-value" style="color: var(--accent-green);">0.004</div></div>
+                <div class="card"><div class="card-title">Воздух (СЗЗ)</div><div class="card-value" style="color: var(--accent-green);">&lt;0.1</div></div>
+            </div>
+            <button class="btn btn-outline" onclick="nav('map')">📍 Карта миграции вод</button>
+        </div>
+
+        <!-- Рабочий -->
+        <div id="dash-worker" style="display: none;">
+            <div class="card" style="border-color: var(--alert-red); background: rgba(255,77,77,0.1);">
+                <div class="card-title" style="color: var(--alert-red);">Экстренная ситуация?</div>
+                <button class="btn btn-red" style="margin-top:10px; font-size: 1.1rem;" onclick="triggerAlarm('worker_sos')">🚨 ВЫЗВАТЬ ПОМОЩЬ</button>
+            </div>
+            <button class="btn btn-outline" onclick="nav('ppe')">🦺 Чек-лист СИЗ</button>
+        </div>
+
+        <!-- Директор -->
+        <div id="dash-director" style="display: none;">
+            <div class="card">
+                <div class="card-title">Годовая экономия (97%)</div>
+                <div id="dir-savings" class="card-value" style="color: var(--warning-yellow); font-size: 2rem;">1 314 000 ₽</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Масштабирование (N участков)</div>
+                <input type="range" id="scale-slider" min="1" max="10" value="1" step="1" oninput="updateROI()" style="width: 100%; margin-top:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-top:5px;">
+                    <span>1 участок</span><span id="scale-val" style="font-weight:bold; color:var(--accent-green);">1</span><span>10 участков</span>
+                </div>
+            </div>
+            <button class="btn btn-outline" onclick="openModal('modal-capex')">💰 Детализация CAPEX/OPEX</button>
+        </div>
+
+        <!-- Жители -->
+        <div id="dash-public" style="display: none; text-align: center;">
+            <div style="font-size: 5rem; margin: 20px 0;">🛡️</div>
+            <h2 style="color: var(--accent-green); margin-bottom: 10px;">Экология в норме</h2>
+            <button class="btn btn-outline" onclick="openModal('modal-fpic')">🤝 Соглашение с коренными народами (FPIC)</button>
+            <div class="card" style="text-align: left; margin-top:10px;">
+                <div class="card-title" style="color: var(--warning-yellow);">Куда идут налоги</div>
+                <p style="font-size: 0.8rem; margin-top: 5px;">🏫 30% — IT-классы<br>💧 40% — Чистая вода<br>🌿 30% — Экомониторинг</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 3: ПЛАН РЕАЛИЗАЦИИ (Roadmap) -->
+    <div id="screen-roadmap" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>План реализации</span></div>
+        <div class="card">
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-title">Этап 0: Аудит и ТЭО (1 месяц)</div>
+                    <div class="timeline-desc">Верификация данных, расчет экономики, закупка пилотной партии U-Guard.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-title">Этап 1: Цифровой пилот (2 месяца)</div>
+                    <div class="timeline-desc">Развертывание датчиков на одной колонне. Сбор данных о проскоке.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-title">Этап 2: Химия (3 месяца)</div>
+                    <div class="timeline-desc">Замена смолы на Purolite S957. Подтверждение эффективности 97%.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-title">Этап 3: Масштабирование (6 месяцев)</div>
+                    <div class="timeline-desc">Замена смолы на всех проблемных колоннах. Выход на экономию 1,3 млн руб.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 4: КАРТА РИСКОВ (Risk Matrix) -->
+    <div id="screen-risks" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>Карта рисков</span></div>
+        <div class="card">
+            <div class="risk-row">
+                <div class="risk-type" style="color: var(--alert-red);">Финансовый</div>
+                <div class="risk-mitigation">Высокий CAPEX. <b>Мера:</b> Поэтапное внедрение (сначала IT, потом смола).</div>
+            </div>
+            <div class="risk-row">
+                <div class="risk-type" style="color: var(--warning-yellow);">Технический</div>
+                <div class="risk-mitigation">Сбой датчиков. <b>Мера:</b> Статусная модель (Подозрение -> Лаборатория) и параллельный контроль.</div>
+            </div>
+            <div class="risk-row">
+                <div class="risk-type" style="color: var(--warning-yellow);">Социальный</div>
+                <div class="risk-mitigation">Недоверие жителей. <b>Мера:</b> Публичный экран мониторинга (Прозрачность данных).</div>
+            </div>
+            <div class="risk-row" style="border: none;">
+                <div class="risk-type" style="color: var(--alert-red);">Экологический</div>
+                <div class="risk-mitigation">Утечка раствора. <b>Мера:</b> Замкнутый контур, бетонные поддоны, инструкция по нейтрализации.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 5: КОНЦЕПЦИЯ РАЗМЕЩЕНИЯ -->
+    <div id="screen-placement" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>Новая территория</span></div>
+        <div class="card">
+            <div class="card-title" style="color: var(--accent-green);">Метод СПВ (Скважинное выщелачивание)</div>
+            <p style="font-size:0.8rem; margin-top:5px; line-height:1.5;">Размещение производства на новой территории базируется на методе СПВ. Это исключает появление радиоактивных отвалов на поверхности и сохраняет радон в недрах.</p>
+        </div>
+        <div class="card">
+            <div class="card-title" style="color: var(--warning-yellow);">Социальная лицензия</div>
+            <ul style="font-size:0.75rem; padding-left:15px; margin-top:5px;">
+                <li>Публичные слушания до начала работ.</li>
+                <li>Создание рабочих мест для местных.</li>
+                <li>Публичный доступ к U-Guard (экран экологии).</li>
+                <li>Отчисление части прибыли в фонд района.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 6: АНАЛИТИКА (7, 30, 365) -->
+    <div id="screen-analytics" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>Графики трендов</span></div>
+        <div class="time-filter">
+            <button class="tf-btn" onclick="setChart(7)">7 дней</button>
+            <button class="tf-btn active" onclick="setChart(30)">30 дней</button>
+            <button class="tf-btn" onclick="setChart(365)">365 дней</button>
+        </div>
+        <div class="card" style="height: 250px;">
+            <div class="card-title" id="chart-title">Концентрация урана (30 дней)</div>
+            <div class="chart-container" id="chart-bars"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">Вывод системы</div>
+            <p style="font-size: 0.8rem; color: var(--text-main);" id="chart-desc">Стабильно.</p>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 7: КАРТА -->
+    <div id="screen-map" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>Карта миграции</span></div>
+        <div class="card" style="height: 250px; background: #0d1410; position: relative;">
+            <div style="position: absolute; top: 20%; left: 20%; width: 15px; height: 15px; background: var(--accent-green); border-radius: 50%;"></div>
+            <div id="map-dot-water" style="position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; background: var(--accent-green); border-radius: 50%;"></div>
+            <div style="position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem;">Гидрогеологический контур</div>
+        </div>
+        <button class="btn btn-red" onclick="triggerAlarm('leak')">Симулировать утечку</button>
+    </div>
+
+    <!-- ЭКРАН 8: АВАРИИ -->
+    <div id="screen-alarm" class="screen" style="background: var(--bg-main);">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>Тревоги</span></div>
+        
+        <div id="alarm-status-flow" class="card" style="display: none; border-color: var(--warning-yellow);">
+            <div class="card-title" style="color: var(--warning-yellow);">ПОДОЗРЕНИЕ НА УТЕЧКУ</div>
+            <p style="font-size:0.8rem; margin-top:5px;">Требуется подтверждение.</p>
+            <button class="btn btn-yellow" onclick="confirmAlarmLab()">Подтвердить лабораторией</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="color: var(--alert-red);">Инструкция (PDF)</div>
+            <button class="btn btn-outline" onclick="openModal('modal-chem')" style="margin-top:5px;">🧪 Химическая нейтрализация</button>
+        </div>
+        <button class="btn btn-outline" onclick="resolveAlarm()">Сбросить тревогу</button>
+    </div>
+
+    <!-- ЭКРАН 9: СИЗ -->
+    <div id="screen-ppe" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>СИЗ</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div>Респиратор</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div>Защитные очки</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div>Перчатки</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div>Дозиметр</div></div>
+    </div>
+
+    <!-- ЭКРАН 10: ЖУРНАЛ -->
+    <div id="screen-journal" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>Журнал событий</span></div>
+        <div id="log-container" style="background: var(--bg-card); border-radius: 12px; padding: 10px;"></div>
+    </div>
+
+    <!-- ЭКРАН 11: НАСТРОЙКИ -->
+    <div id="screen-settings" class="screen">
+        <div class="header"><span class="menu-btn" onclick="toggleMenu(true)">☰</span><span>Настройки</span></div>
+        <div class="card">
+            <div class="setting-row">
+                <span>Светлая тема</span>
+                <label class="switch"><input type="checkbox" id="theme-toggle" onchange="toggleTheme()"><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+                <span>Симулировать сбой сети (Оффлайн)</span>
+                <label class="switch"><input type="checkbox" id="offline-toggle" onchange="toggleOffline()"><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <div id="modal-faq" class="modal">
+        <div class="header"><span>FAQ для жюри</span><span onclick="closeModal('modal-faq')" style="cursor:pointer; color:var(--alert-red);">✖</span></div>
+        <div class="faq-q">1. Как рассчитывается эффективность?</div>
+        <div class="faq-a">Через гибридную модель: косвенные датчики (расход) + лаборатория. Формула: η = 1 - (C_вых / C_вх).</div>
+        <div class="faq-q">2. Защита от ложных тревог?</div>
+        <div class="faq-a">Статусы: «Подозрение» → «Проверка» → «Авария». Требуется подтверждение оператора.</div>
+        <div class="faq-q">3. Почему Purolite S957?</div>
+        <div class="faq-a">Емкость 280-350 мг/г (в 3.5 раза выше). Устойчив к нитратам.</div>
+        <div class="faq-q">4. Что с отработанной смолой?</div>
+        <div class="faq-a">Десорбция (смыв урана), затем кондиционирование и захоронение как РАО.</div>
+    </div>
+
+    <div id="modal-models" class="modal">
+        <div class="header"><span>Модели прогноза</span><span onclick="closeModal('modal-models')" style="cursor:pointer; color:var(--alert-red);">✖</span></div>
+        <div class="card">
+            <div class="card-title">Модель Томаса</div>
+            <p style="font-size:0.8rem;">Используется для описания кривых проскока в колоннах.</p>
+            <div style="font-family:monospace; background:#000; padding:5px; margin-top:5px; color:var(--accent-green);">ln(C0/Ct - 1) = k*T*q0*m/Q - k*T*C0*t</div>
+        </div>
+    </div>
+
+    <div id="modal-capex" class="modal">
+        <div class="header"><span>CAPEX / OPEX</span><span onclick="closeModal('modal-capex')" style="cursor:pointer; color:var(--alert-red);">✖</span></div>
+        <div class="card"><div class="card-title">CAPEX (3-5 млн руб)</div><p style="font-size:0.8rem;">- Смола Purolite (пилотная партия)<br>- Серверы и датчики<br>- Монтаж и наладка</p></div>
+        <div class="card"><div class="card-title">OPEX</div><p style="font-size:0.8rem;">В базовой модели неизменен. В случае роста покрывается за счет цифровизации (-8-12% издержек).</p></div>
+    </div>
+
+    <div id="modal-chem" class="modal">
+        <div class="header"><span>Хим. нейтрализация</span><span onclick="closeModal('modal-chem')" style="cursor:pointer; color:var(--alert-red);">✖</span></div>
+        <div class="card"><div class="card-title">Действия при проливе</div>
+            <p style="font-size:0.85rem; line-height:1.5;">1. <b>Локализация:</b> Использовать вермикулит или глину.<br>2. <b>Осаждение:</b> Применить известковое молоко (Ca(OH)2).<br>3. <b>Утилизация:</b> Собрать как РАО.</p>
+        </div>
+    </div>
+
+    <div id="modal-fpic" class="modal">
+        <div class="header"><span>FPIC</span><span onclick="closeModal('modal-fpic')" style="cursor:pointer; color:var(--alert-red);">✖</span></div>
+        <div class="card"><div class="card-title">Согласие коренных народов</div>
+            <p style="font-size:0.85rem; line-height:1.5;">До начала работ мы инициируем диалог с представителями коренных народов. Гарантируем, что производство не затронет места традиционного проживания.</p>
+        </div>
+    </div>
+
+    <!-- НИЖНЕЕ МЕНЮ -->
+    <div class="bottom-nav" id="bottom-nav"></div>
+</div>
+
+<script>
+    let currentRole = '';
+    let logs = [];
+
+    // 1. Управление меню и модалками
+    function toggleMenu(open) {
+        document.getElementById('side-menu').classList.toggle('open', open);
+        document.getElementById('overlay-bg').classList.toggle('open', open);
+    }
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function openFAQ() { openModal('modal-faq'); }
+
+    // 2. Авторизация
+    function showPasswordPrompt(role) {
+        document.getElementById('password-area').style.display = 'block';
+        document.getElementById('pass-input').focus();
+        window.targetRole = role;
+    }
+    function checkPassword() {
+        if (document.getElementById('pass-input').value === '1234') {
+            login(window.targetRole);
+        } else { alert('Неверный пароль! (Подсказка: 1234)'); }
+    }
+
+    function login(role) {
+        currentRole = role;
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('password-area').style.display = 'none';
+        
+        ['operator', 'technologist', 'biologist', 'worker', 'director', 'public'].forEach(r => {
+            document.getElementById('dash-' + r).style.display = 'none';
+        });
+
+        let roleName = '';
+        const nav = document.getElementById('bottom-nav');
+        nav.innerHTML = '';
+
+        if (role === 'operator') {
+            roleName = 'Оператор';
+            document.getElementById('dash-operator').style.display = 'block';
+            nav.innerHTML = `
+                <div class="nav-item active" onclick="nav('dashboard', this)"><span class="nav-icon">🏠</span>Главная</div>
+                <div class="nav-item" onclick="nav('analytics', this)"><span class="nav-icon">📈</span>Графики</div>
+                <div class="nav-item" onclick="nav('alarm', this)"><span class="nav-icon">🚨</span>Тревоги</div>
+            `;
+        } else if (role === 'technologist') {
+            roleName = 'Технолог';
+            document.getElementById('dash-technologist').style.display = 'block';
+            nav.innerHTML = `
+                <div class="nav-item active" onclick="nav('dashboard', this)"><span class="nav-icon">🧪</span>Прогноз</div>
+                <div class="nav-item" onclick="nav('analytics', this)"><span class="nav-icon">📈</span>Графики</div>
+            `;
+        } else if (role === 'biologist') {
+            roleName = 'Эколог';
+            document.getElementById('dash-biologist').style.display = 'block';
+            nav.innerHTML = `
+                <div class="nav-item active" onclick="nav('dashboard', this)"><span class="nav-icon">🌱</span>Эко-сводка</div>
+                <div class="nav-item" onclick="nav('map', this)"><span class="nav-icon">📍</span>Карта</div>
+            `;
+        } else if (role === 'worker') {
+            roleName = 'Рабочий';
+            document.getElementById('dash-worker').style.display = 'block';
+            nav.innerHTML = `
+                <div class="nav-item active" onclick="nav('dashboard', this)"><span class="nav-icon">🦺</span>Главная</div>
+                <div class="nav-item" onclick="nav('ppe', this)"><span class="nav-icon">✅</span>СИЗ</div>
+                <div class="nav-item" onclick="nav('alarm', this)"><span class="nav-icon">🚨</span>Тревоги</div>
+            `;
+        } else if (role === 'director') {
+            roleName = 'Директор';
+            document.getElementById('dash-director').style.display = 'block';
+            updateROI();
+            nav.innerHTML = `
+                <div class="nav-item active" onclick="nav('dashboard', this)"><span class="nav-icon">💼</span>Экономика</div>
+                <div class="nav-item" onclick="nav('journal', this)"><span class="nav-icon">📋</span>Журнал</div>
+                <div class="nav-item" onclick="nav('settings', this)"><span class="nav-icon">⚙️</span>Настройки</div>
+            `;
+        } else if (role === 'public') {
+            roleName = 'Житель';
+            document.getElementById('dash-public').style.display = 'block';
+            nav.innerHTML = `<div class="nav-item active" onclick="nav('dashboard', this)"><span class="nav-icon">🌍</span>Экология</div>`;
+        }
+
+        document.getElementById('role-display').innerText = roleName;
+        document.getElementById('menu-role-name').innerText = 'Роль: ' + roleName;
+        nav('dashboard');
+        addLog(`Вход в систему. Роль: ${roleName}`);
+    }
+
+    function logout() {
+        toggleMenu(false);
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-login').classList.add('active');
+        document.getElementById('badge-status').innerText = "Система: OK";
+        document.getElementById('badge-status').style.color = "var(--accent-green)";
+        addLog("Выход из системы.");
+    }
+
+    // 3. Навигация
+    function nav(screenId, element = null) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-' + screenId).classList.add('active');
+        if (element) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            element.classList.add('active');
+        }
+        if (screenId === 'analytics') setChart(30);
+    }
+
+    // 4. Модернизация
+    function upgradeTo97() {
+        document.getElementById('eff-value').innerText = "97%";
+        document.getElementById('loss-value').innerText = "0,27";
+        document.getElementById('loss-value').style.color = "var(--accent-green)";
+        document.getElementById('upgrade-btn').style.display = 'none';
+        document.getElementById('revert-btn').style.display = 'block';
+        addLog("✅ Внедрена смола Purolite S957 (97%).");
+    }
+
+    function revertUpgrade() {
+        document.getElementById('eff-value').innerText = "95%";
+        document.getElementById('loss-value').innerText = "0,45";
+        document.getElementById('loss-value').style.color = "var(--alert-red)";
+        document.getElementById('upgrade-btn').style.display = 'block';
+        document.getElementById('revert-btn').style.display = 'none';
+        addLog("❌ Отмена модернизации. Возврат к 95%.");
+    }
+
+    // 5. Лаборатория
+    function submitLabData() {
+        const val = document.getElementById('lab-input').value;
+        if(val) {
+            addLog(`🧪 Лаборатория: подтверждена концентрация ${val} мг/л.`);
+            showToast("Данные валидированы!");
+            document.getElementById('lab-input').value = '';
+        }
+    }
+
+    // 6. Графики
+    function setChart(days) {
+        document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('chart-title').innerText = `Концентрация урана (${days} дней)`;
+        
+        const container = document.getElementById('chart-bars');
+        container.innerHTML = '';
+        let numBars = days === 7 ? 7 : (days === 30 ? 15 : 20);
+
+        for(let i=0; i<numBars; i++) {
+            let height = Math.floor(Math.random() * 50) + 30;
+            if (i > numBars - 3) height = 90 + Math.floor(Math.random() * 10); 
+            
+            let bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = height + '%';
+            if (height > 85) bar.style.backgroundColor = 'var(--alert-red)';
+            else if (height > 70) bar.style.backgroundColor = 'var(--warning-yellow)';
+
+            let label = document.createElement('div');
+            label.className = 'bar-label';
+            label.innerText = days === 7 ? `Д${i+1}` : `Т${i*2}`;
+            bar.appendChild(label);
+            container.appendChild(bar);
+        }
+        let desc = days === 7 ? "Стабильно." : (days === 30 ? "Прогноз: проскок через 4 часа!" : "Цикличность. Осенью требуется замена.");
+        document.getElementById('chart-desc').innerText = desc;
+    }
+
+    // 7. Тревоги
+    function triggerAlarm(type) {
+        nav('alarm');
+        document.getElementById('alarm-status-flow').style.display = 'block';
+        document.getElementById('badge-status').innerText = "Система: ТРЕВОГА";
+        document.getElementById('badge-status').style.color = "var(--warning-yellow)";
+        document.getElementById('map-dot-water').style.background = "var(--warning-yellow)";
+        addLog("🚨 СИГНАЛ: Отклонение датчика.");
+        
+        if(type === 'worker_sos') {
+            addLog("🆘 РАБОЧИЙ НАЖАЛ КНОПКУ SOS!");
+            alert("Сигнал SOS передан диспетчеру!");
+        }
+    }
+
+    function confirmAlarmLab() {
+        document.getElementById('alarm-status-flow').style.borderColor = "var(--alert-red)";
+        document.getElementById('alarm-status-flow').querySelector('.card-title').innerText = "АВАРИЯ ПОДТВЕРЖДЕНА";
+        document.getElementById('alarm-status-flow').querySelector('.card-title').style.color = "var(--alert-red)";
+        document.getElementById('badge-status').innerText = "Система: АВАРИЯ";
+        document.getElementById('badge-status').style.color = "var(--alert-red)";
+        document.getElementById('map-dot-water').style.background = "var(--alert-red)";
+        addLog("🔴 Лаборатория подтвердила аварию (0.32 мг/л).");
+        showToast("⚠️ АВАРИЯ ПОДТВЕРЖДЕНА!");
+    }
+
+    function resolveAlarm() {
+        document.getElementById('alarm-status-flow').style.display = 'none';
+        document.getElementById('badge-status').innerText = "Система: OK";
+        document.getElementById('badge-status').style.color = "var(--accent-green)";
+        document.getElementById('map-dot-water').style.background = "var(--accent-green)";
+        addLog("🟢 Тревога сброшена.");
+        nav('dashboard');
+    }
+
+    // 8. СИЗ
+    function toggleCheck(element) {
+        element.classList.toggle('done');
+        if (element.classList.contains('done')) {
+            element.querySelector('.check-box').innerText = "✔";
+            addLog("✅ Проверен элемент СИЗ.");
+        } else {
+            element.querySelector('.check-box').innerText = "";
+        }
+    }
+
+    // 9. Экономика
+    function updateROI() {
+        let scale = parseInt(document.getElementById('scale-slider').value);
+        document.getElementById('scale-val').innerText = scale;
+        let savings = 1314000 * scale;
+        document.getElementById('dir-savings').innerText = savings.toLocaleString('ru-RU') + ' ₽';
+    }
+
+    function toggleOffline() {
+        const isOffline = document.getElementById('offline-toggle').checked;
+        const badge = document.getElementById('badge-net');
+        if(isOffline) {
+            badge.innerText = "Оффлайн (Кэш)";
+            badge.classList.add('offline');
+            addLog("📡 Сбой сети! Система перешла в оффлайн-режим.");
+            showToast("Оффлайн режим активирован");
+        } else {
+            badge.innerText = "Онлайн";
+            badge.classList.remove('offline');
+            addLog("📡 Связь восстановлена. Синхронизация.");
+        }
+    }
+
+    function toggleTheme() { document.body.classList.toggle('light-theme'); }
+
+    // 10. Утилиты
+    function addLog(text) {
+        const time = new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+        logs.unshift({ time, text });
+        const container = document.getElementById('log-container');
+        if(!container) return;
+        container.innerHTML = '';
+        logs.forEach(log => {
+            container.innerHTML += `<div style="display:flex; gap:10px; font-size:0.75rem; padding:10px; border-bottom:1px solid var(--bg-card-light);">
+                <div style="color:var(--text-muted); min-width:45px;">${log.time}</div><div>${log.text}</div>
+            </div>`;
+        });
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); background-color: var(--accent-green); color: #000; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 0.8rem; z-index: 100; width: 85%; text-align: center;`;
+        toast.innerText = message;
+        document.querySelector('.phone').appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 2500);
+    }
+</script>
+
+</body>
+</html>
